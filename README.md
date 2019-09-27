@@ -1,4 +1,4 @@
-# angular-2-local-storage
+# angular-2-local-storage-encrypt
 
 LocalStorageService for Angular with mostly the same API (and most of the code) from [angular-local-storage](https://github.com/grevory/angular-local-storage).
 

@@ -1,10 +1,10 @@
 import { Inject, Injectable, Optional } from '@angular/core';
 import { Observable, Subscriber } from 'rxjs';
 import { share } from 'rxjs/operators';
-
+import { AesUtil } from './AesUtil';
 import { ILocalStorageEvent } from './local-storage-events.interface';
 import { INotifyOptions } from './notify-options.interface';
-import { ILocalStorageServiceConfig, LOCAL_STORAGE_SERVICE_CONFIG } from './local-storage.config.interface';
+import { ILocalStorageServiceConfig, IEncryptionOptions, LOCAL_STORAGE_SERVICE_CONFIG } from './local-storage.config.interface';
 
 const DEPRECATED: string = 'This function is deprecated.';
 const LOCAL_STORAGE_NOT_SUPPORTED: string = 'LOCAL_STORAGE_NOT_SUPPORTED';
@@ -26,6 +26,8 @@ export class LocalStorageService {
     };
     private prefix: string = 'ls';
     private storageType: 'sessionStorage' | 'localStorage' = 'localStorage';
+    private encryptionActive: boolean = true;
+    private encryptionOptions: IEncryptionOptions;
     private webStorage: Storage;
 
     private errors: Subscriber<string> = new Subscriber<string>();
@@ -36,7 +38,7 @@ export class LocalStorageService {
     constructor (
         @Optional() @Inject(LOCAL_STORAGE_SERVICE_CONFIG) config: ILocalStorageServiceConfig = {}
     ) {
-        let { notifyOptions, prefix, storageType } = config;
+        let { notifyOptions, prefix, storageType, encryptionActive, encryptionOptions } = config;
 
         if (notifyOptions != null) {
             let { setItem, removeItem } = notifyOptions;
@@ -47,6 +49,14 @@ export class LocalStorageService {
         }
         if (storageType != null) {
             this.setStorageType(storageType);
+        }
+
+        if(encryptionActive != null) {
+            this.setEncryptionActive(encryptionActive);
+        }
+
+        if(encryptionOptions != null) {
+            this.setEncryptionOptions(encryptionOptions);
         }
 
         this.errors$ = new Observable<string>((observer: Subscriber<string>) => this.errors = observer).pipe(share());
@@ -118,6 +128,14 @@ export class LocalStorageService {
 
     public getStorageType (): string {
         return this.storageType;
+    }
+
+    public getEncryptionActive (): boolean {
+        return this.encryptionActive;
+    }
+
+    public getEncryptionOptions (): IEncryptionOptions {
+        return this.encryptionOptions;
     }
 
     public keys (): Array<string> {
@@ -257,4 +275,34 @@ export class LocalStorageService {
             this.notifyOptions.removeItem = removeItem;
         }
     }
+
+    private setEncryptionActive(encryptionActive: boolean): void {
+        console.log(encryptionActive);
+        this.encryptionActive = encryptionActive;
+    }
+
+    private setEncryptionOptions(encryptionOptions: IEncryptionOptions): void {
+        console.log(encryptionOptions);
+        this.encryptionOptions = encryptionOptions;
+    }
+
+    public encrypt(textToEncrypt: any): string  {
+        if (this.getEncryptionOptions) {
+            const aesUtil = new AesUtil(128, 1000);
+            console.log(typeof textToEncrypt);
+            let valueEncrypt;
+            if (typeof textToEncrypt === 'object') {
+                valueEncrypt = JSON.stringify(textToEncrypt);
+            } else if (typeof textToEncrypt === 'boolean' ||  typeof textToEncrypt === 'number') {
+                valueEncrypt = String(textToEncrypt);
+            } else {
+                valueEncrypt = textToEncrypt;
+            }
+            const textEncrypt = aesUtil.encrypt(this.encryptionOptions.encryptionSalt, this.encryptionOptions.encryptionIv, this.encryptionOptions.encryptionKey, valueEncrypt);
+            console.log(textToEncrypt, textEncrypt);
+            return textEncrypt;
+
+        }
+        return textToEncrypt;
+      }
 }

@@ -8,4 +8,12 @@ export interface ILocalStorageServiceConfig {
     notifyOptions?: INotifyOptions;
     prefix?: string;
     storageType?: 'sessionStorage' | 'localStorage';
+    encryptionActive?: boolean;
+    encryptionOptions?: IEncryptionOptions;
+}
+
+export interface IEncryptionOptions  {
+    encryptionKey: string;
+    encryptionSalt: string;
+    encryptionIv: string;
 }
