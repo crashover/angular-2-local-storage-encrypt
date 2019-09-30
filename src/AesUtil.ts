@@ -1,4 +1,4 @@
-import * as CryptoJS from "crypto-js";
+var CryptoJS = require("crypto-js");
 export var AesUtil = function(keySize, iterationCount) {
     this.keySize = keySize / 32;
     this.iterationCount = iterationCount;

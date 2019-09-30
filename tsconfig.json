@@ -15,7 +15,7 @@
     "target": "es5",
     "inlineSources": false,
     "importHelpers": true,
-    "types": []
+    "types": ["node"]
   },
 
   "files": [
