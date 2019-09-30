@@ -1,6 +1,6 @@
 {
   "name": "angular-2-local-storage-encrypt",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "LocalStorageService with encrypt AES128 values",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
@@ -16,11 +16,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/phenomnomnominal/angular-2-local-storage.git"
+    "url": "https://github.com/crashover/angular-2-local-storage-encrypt"
   },
   "bugs": {
-    "url": "https://github.com/phenomnomnominal/angular-2-local-storage/issues",
-    "email": "craigspence0@gmail.com"
+    "url": "https://github.com/crashover/angular-2-local-storage-encrypt/issues",
+    "email": "jpablo-garcia@hotmail.com"
   },
   "license": "MIT",
   "peerDependencies": {

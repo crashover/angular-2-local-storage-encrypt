@@ -1,30 +1,33 @@
 # angular-2-local-storage-encrypt
 
-LocalStorageService for Angular with mostly the same API (and most of the code) from [angular-local-storage](https://github.com/grevory/angular-local-storage).
-
+Based on [angular-2-local-storage](https://github.com/phenomnomnominal/angular-2-local-storage)
 AoT compatible.
 
 ## Differences
 
-* No events broadcast on $rootScope - LocalStorageService exposes observables for `errors$`, `removeItems$`, `setItems$` and `warning$` if you really need something to happen when something happens.
-* The `bind` function doesn't work anymore (there is a stub so this can still be a drop-in, but it'll do nothing).
-
+* Save the values with AES128
 ## Install
 
-`npm install angular-2-local-storage`
+`npm install crypto-js angular-2-local-storage-encrypt`
 
 ## Usage
 
 You can optionally configure the module:
 
 ```typescript
-import { LocalStorageModule } from 'angular-2-local-storage';
+import { LocalStorageModule } from 'angular-2-local-storage-encrypt';
 
 @NgModule({
     imports: [
         LocalStorageModule.forRoot({
             prefix: 'my-app',
-            storageType: 'localStorage'
+            storageType: 'localStorage',
+            encryptionActive: true,
+            encryptionOptions: {
+                encryptionKey: 'keyForEncriptHere',
+                encryptionIv: 'iVHere',
+                encryptionSalt: 'saltHere'
+            }
         })
     ],
     declarations: [
@@ -41,7 +44,7 @@ export class AppModule { }
 Then you can use it in a component:
 
 ```typescript
-import { LocalStorageService } from 'angular-2-local-storage';
+import { LocalStorageServiceEncrypt } from 'angular-2-local-storage-encrypt';
 
 @Component({
     // ...
@@ -50,12 +53,12 @@ export class SomeComponent {
     constructor (
         private _localStorageService: LocalStorageService
     ) {
-        // YAY!
+        // this._localStorageService.set('key', 'value');
+        // this._localStorageService.get('key');
     }
 }
 
 ```
 
 ### Configuration options
-
-`import { ILocalStorageServiceConfig } from 'angular-2-local-storage';` for type information about the configuration object.
+encryptionActive: boolean; true for save with AES128, false for text plain;
