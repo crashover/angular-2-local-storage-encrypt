@@ -123,7 +123,7 @@ export class LocalStorageServiceEncrypt {
 
         try {
             if(this.encryptionActive) {
-                return JSON.parse(this.decrypt(item));
+                return this.decrypt(item);
             }
             return JSON.parse(item);
         } catch (e) {
@@ -326,7 +326,7 @@ export class LocalStorageServiceEncrypt {
         return textToEncrypt;
     }
 
-    private decrypt(textToDecrypt): string {
+    private decrypt <T> (textToDecrypt): T {
         const aesUtil = new AesUtil(128, 1000);
         let objectDecrypt: ILocalStorageEncrypt;
         let valueResult: any;
