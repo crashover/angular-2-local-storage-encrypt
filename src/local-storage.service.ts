@@ -1,10 +1,12 @@
 import { Inject, Injectable, Optional } from '@angular/core';
 import { Observable, Subscriber } from 'rxjs';
 import { share } from 'rxjs/operators';
-
+import { AesUtil } from './AesUtil';
 import { ILocalStorageEvent } from './local-storage-events.interface';
+import { ILocalStorageEncrypt, typeValue } from './local-storage-encrypt.interface';
 import { INotifyOptions } from './notify-options.interface';
-import { ILocalStorageServiceConfig, LOCAL_STORAGE_SERVICE_CONFIG } from './local-storage.config.interface';
+import { ILocalStorageServiceConfig, IEncryptionOptions, LOCAL_STORAGE_SERVICE_CONFIG } from './local-storage.config.interface';
+import { type } from 'os';
 
 const DEPRECATED: string = 'This function is deprecated.';
 const LOCAL_STORAGE_NOT_SUPPORTED: string = 'LOCAL_STORAGE_NOT_SUPPORTED';
@@ -12,7 +14,7 @@ const LOCAL_STORAGE_NOT_SUPPORTED: string = 'LOCAL_STORAGE_NOT_SUPPORTED';
 @Injectable({
     providedIn: 'root'
 })
-export class LocalStorageService {
+export class LocalStorageServiceEncrypt {
     public isSupported: boolean = false;
 
     public errors$: Observable<string>;
@@ -26,6 +28,8 @@ export class LocalStorageService {
     };
     private prefix: string = 'ls';
     private storageType: 'sessionStorage' | 'localStorage' = 'localStorage';
+    private encryptionActive: boolean = true;
+    private encryptionOptions: IEncryptionOptions;
     private webStorage: Storage;
 
     private errors: Subscriber<string> = new Subscriber<string>();
@@ -36,7 +40,7 @@ export class LocalStorageService {
     constructor (
         @Optional() @Inject(LOCAL_STORAGE_SERVICE_CONFIG) config: ILocalStorageServiceConfig = {}
     ) {
-        let { notifyOptions, prefix, storageType } = config;
+        let { notifyOptions, prefix, storageType, encryptionActive, encryptionOptions } = config;
 
         if (notifyOptions != null) {
             let { setItem, removeItem } = notifyOptions;
@@ -47,6 +51,14 @@ export class LocalStorageService {
         }
         if (storageType != null) {
             this.setStorageType(storageType);
+        }
+
+        if(encryptionActive != null) {
+            this.setEncryptionActive(encryptionActive);
+        }
+
+        if(encryptionOptions != null) {
+            this.setEncryptionOptions(encryptionOptions);
         }
 
         this.errors$ = new Observable<string>((observer: Subscriber<string>) => this.errors = observer).pipe(share());
@@ -110,6 +122,9 @@ export class LocalStorageService {
         }
 
         try {
+            if(this.encryptionActive) {
+                return JSON.parse(this.decrypt(item));
+            }
             return JSON.parse(item);
         } catch (e) {
             return null;
@@ -118,6 +133,14 @@ export class LocalStorageService {
 
     public getStorageType (): string {
         return this.storageType;
+    }
+
+    public getEncryptionActive (): boolean {
+        return this.encryptionActive;
+    }
+
+    public getEncryptionOptions (): IEncryptionOptions {
+        return this.encryptionOptions;
     }
 
     public keys (): Array<string> {
@@ -182,7 +205,11 @@ export class LocalStorageService {
         if (value === undefined) {
             value = null;
         } else {
-            value = JSON.stringify(value);
+            if (this.encryptionActive) {
+                value = this.encrypt(value);
+            } else {
+                value = JSON.stringify(value);
+            }
         }
 
         if (!this.isSupported) {
@@ -256,5 +283,77 @@ export class LocalStorageService {
         if (removeItem != null) {
             this.notifyOptions.removeItem = removeItem;
         }
+    }
+
+    private setEncryptionActive(encryptionActive: boolean): void {
+        this.encryptionActive = encryptionActive;
+    }
+
+    private setEncryptionOptions(encryptionOptions: IEncryptionOptions): void {
+        this.encryptionOptions = encryptionOptions;
+    }
+
+    private encrypt(textToEncrypt: any): string  {
+        if (this.getEncryptionOptions) {
+            const aesUtil = new AesUtil(128, 1000);
+            let objectToEncrypt: ILocalStorageEncrypt;
+            let valueEncrypt;
+            if (typeof textToEncrypt === 'object') {
+                objectToEncrypt = {
+                    type: typeValue.object,
+                    value: JSON.stringify(textToEncrypt)
+                };
+            } else if (typeof textToEncrypt === 'boolean' ) {
+                objectToEncrypt = {
+                    type: typeValue.boolean,
+                    value: String(textToEncrypt)
+                };
+            }else if (typeof textToEncrypt === 'number') {
+                objectToEncrypt = {
+                    type: typeValue.number,
+                    value: String(textToEncrypt)
+                };
+            } else {
+                objectToEncrypt = {
+                    type: typeValue.string,
+                    value: textToEncrypt
+                };
+            }
+            valueEncrypt = JSON.stringify(objectToEncrypt);
+            const textEncrypt = aesUtil.encrypt(this.encryptionOptions.encryptionSalt, this.encryptionOptions.encryptionIv, this.encryptionOptions.encryptionKey, valueEncrypt);
+            return textEncrypt;
+        }
+        return textToEncrypt;
+    }
+
+    private decrypt(textToDecrypt): string {
+        const aesUtil = new AesUtil(128, 1000);
+        let objectDecrypt: ILocalStorageEncrypt;
+        let valueResult: any;
+        try {
+            let textDecrypt = aesUtil.decrypt(this.encryptionOptions.encryptionSalt, this.encryptionOptions.encryptionIv, this.encryptionOptions.encryptionKey, textToDecrypt);
+            objectDecrypt = JSON.parse(textDecrypt);
+        } catch {
+
+        }
+        switch (objectDecrypt.type) {
+            case 'string':
+                valueResult = objectDecrypt.value;
+            break;
+            case 'number':
+                valueResult = Number(objectDecrypt.value);
+            break;
+            case 'object':
+                valueResult = JSON.parse(objectDecrypt.value);
+            break;
+            case 'boolean':
+                if (objectDecrypt.value === 'false') {
+                    valueResult = Boolean(false);
+                } else if (objectDecrypt.value === 'true') {
+                    valueResult = Boolean(true);
+                }
+            break;
+        }
+        return valueResult;
     }
 }

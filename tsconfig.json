@@ -15,7 +15,7 @@
     "target": "es5",
     "inlineSources": false,
     "importHelpers": true,
-    "types": [],
+    "types": ["node"]
   },
 
   "files": [
@@ -31,6 +31,6 @@
     "skipTemplateCodegen": true,
     "fullTemplateTypeCheck": true,
     "strictInjectionParameters": true,
-    "enableResourceInlining": true,
+    "enableResourceInlining": true
   }
 }
